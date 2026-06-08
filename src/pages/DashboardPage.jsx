@@ -94,7 +94,7 @@ export default function DashboardPage() {
           <StatCard label="Total Product" value={stats?.total_produk} sub={`${stats?.tersedia} Produk Ready`} icon={Package} iconColor="bg-blue-500" subColor="text-blue-500" />
           <StatCard label="Out of Stock" value={stats?.stok_habis} sub="Ask for Stock / Pre-Order" icon={XCircle} iconColor="bg-red-500" subColor="text-red-500" />
           <StatCard label="Almost Out" value={stats?.hampir_habis} sub="≤ 5 PCS" icon={AlertTriangle} iconColor="bg-yellow-500" subColor="text-yellow-500" />
-          <StatCard label="Sync Interval" value="15 MIN" sub="Cron Active" icon={Clock} iconColor="bg-green-500" subColor="text-green-500" />
+          <StatCard label="Sync Interval" value="6 JAM" sub="Cron Active (00, 06, 12, 18)" icon={Clock} iconColor="bg-green-500" subColor="text-green-500" />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

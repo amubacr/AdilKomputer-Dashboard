@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import PageHeader from '@/components/layout/PageHeader';
-import { RefreshCw, CheckCircle, XCircle, Clock, Wifi, WifiOff } from 'lucide-react';
+import { RefreshCw, CheckCircle, XCircle, Clock, Wifi, WifiOff, Terminal } from 'lucide-react';
 
 const API = import.meta.env.VITE_API_URL;
 
@@ -13,7 +13,7 @@ const formatDuration = (ms) => {
 
 const formatDate = (iso) => {
   if (!iso) return '-';
-  return new Date(iso).toLocaleString('id-ID', { 
+  return new Date(iso).toLocaleString('id-ID', {
     day: '2-digit', month: 'short', year: 'numeric',
     hour: '2-digit', minute: '2-digit', second: '2-digit'
   });
@@ -26,6 +26,13 @@ export default function SyncPage() {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [connected, setConnected] = useState(true);
+
+  // Live console state
+  const [consoleLines, setConsoleLines] = useState([]);
+  const [consoleActive, setConsoleActive] = useState(false);
+  const [sseConnected, setSseConnected] = useState(false);
+  const consoleEndRef = useRef(null);
+  const eventSourceRef = useRef(null);
 
   const fetchData = async () => {
     try {
@@ -45,23 +52,60 @@ export default function SyncPage() {
     }
   };
 
-  useEffect(() => { 
+  useEffect(() => {
     fetchData();
     const interval = setInterval(fetchData, 15000);
     return () => clearInterval(interval);
   }, []);
 
+  // Auto scroll console
+  useEffect(() => {
+    consoleEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [consoleLines]);
+
+  const startSSE = () => {
+    if (eventSourceRef.current) eventSourceRef.current.close();
+
+    const token = localStorage.getItem('adil_dashboard_token');
+    const es = new EventSource(`${API}/api/sync/stream?token=${token}`);
+    eventSourceRef.current = es;
+
+    setConsoleActive(true);
+    setConsoleLines([]);
+
+    es.onopen = () => setSseConnected(true);
+
+    es.onmessage = (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (data.type === 'log') {
+          setConsoleLines(prev => [...prev, { time: data.time, message: data.message }]);
+        } else if (data.type === 'done') {
+          setConsoleLines(prev => [...prev, { time: new Date().toLocaleTimeString('id-ID'), message: '✅ Sync selesai!', done: true }]);
+          setSyncing(false);
+          setTimeout(fetchData, 2000);
+        } else if (data.type === 'connected') {
+          setConsoleLines(prev => [...prev, { time: data.time, message: '🔌 ' + data.message, system: true }]);
+        }
+      } catch {}
+    };
+
+    es.onerror = () => {
+      setSseConnected(false);
+      es.close();
+    };
+  };
+
+  // SSE tidak support custom headers, pakai query param token
+  // Update: tambah token ke SSE URL di authMiddleware
   const handleSync = async () => {
     setSyncing(true);
+    startSSE();
     try {
       await axios.post(`${API}/api/sync/trigger`);
-      setTimeout(fetchData, 5000);
-      setTimeout(fetchData, 30000);
-      setTimeout(fetchData, 60000);
     } catch (e) {
       alert(e.response?.data?.message || 'Gagal trigger sync');
-    } finally {
-      setTimeout(() => setSyncing(false), 5000);
+      setSyncing(false);
     }
   };
 
@@ -94,7 +138,7 @@ export default function SyncPage() {
                 {connected ? 'Kledo API Connected' : 'Koneksi Terputus'}
               </p>
               <p className="text-xs text-gray-500 mt-0.5">
-                {connected 
+                {connected
                   ? `Full Sync setiap 6 jam · Last sync: ${formatDate(stats?.last_sync)}`
                   : 'Tidak dapat terhubung ke API'
                 }
@@ -126,6 +170,43 @@ export default function SyncPage() {
           )}
         </div>
 
+        {/* Live Console */}
+        <div className="bg-gray-950 rounded-xl border border-gray-800 overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
+            <div className="flex items-center gap-2">
+              <Terminal className="w-4 h-4 text-green-400" />
+              <span className="text-sm font-mono font-semibold text-green-400">Live Sync Console</span>
+              {sseConnected && syncing && (
+                <span className="flex items-center gap-1 text-xs text-green-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse inline-block"></span>
+                  Live
+                </span>
+              )}
+            </div>
+            <div className="flex gap-1.5">
+              <span className="w-3 h-3 rounded-full bg-red-500"></span>
+              <span className="w-3 h-3 rounded-full bg-yellow-500"></span>
+              <span className="w-3 h-3 rounded-full bg-green-500"></span>
+            </div>
+          </div>
+
+          <div className="h-64 overflow-y-auto p-4 font-mono text-xs space-y-1">
+            {!consoleActive ? (
+              <p className="text-gray-500">Klik "Full Sync Sekarang" untuk memulai live console...</p>
+            ) : consoleLines.length === 0 ? (
+              <p className="text-gray-500">Menunggu log sync...</p>
+            ) : (
+              consoleLines.map((line, i) => (
+                <div key={i} className={`flex gap-3 ${line.done ? 'text-green-400 font-semibold' : line.system ? 'text-blue-400' : 'text-gray-300'}`}>
+                  <span className="text-gray-600 flex-shrink-0">[{line.time}]</span>
+                  <span>{line.message}</span>
+                </div>
+              ))
+            )}
+            <div ref={consoleEndRef} />
+          </div>
+        </div>
+
         {/* Sync Log Table */}
         <div className="bg-white rounded-xl border border-gray-100">
           <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
@@ -139,7 +220,6 @@ export default function SyncPage() {
             <div className="p-8 text-center">
               <Clock className="w-8 h-8 text-gray-300 mx-auto mb-2" />
               <p className="text-sm text-gray-400">Belum ada log sync</p>
-              <p className="text-xs text-gray-300 mt-1">Klik "Full Sync Sekarang" untuk memulai</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
