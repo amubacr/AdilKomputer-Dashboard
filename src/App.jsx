@@ -8,6 +8,7 @@ import ProductsPage from '@/pages/ProductsPage';
 import CategoriesPage from '@/pages/CategoriesPage';
 import StoreConfigPage from '@/pages/StoreConfigPage';
 import BrandingPage from '@/pages/BrandingPage';
+import SettingsPage from '@/pages/SettingsPage';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -26,6 +27,7 @@ function AppRoutes() {
       <Route path="/sync" element={<ProtectedRoute><SyncPage /></ProtectedRoute>} />
       <Route path="/config/store" element={<ProtectedRoute><StoreConfigPage /></ProtectedRoute>} />
       <Route path="/config/branding" element={<ProtectedRoute><BrandingPage /></ProtectedRoute>} />
+      <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );

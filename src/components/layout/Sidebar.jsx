@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   LayoutDashboard, Package, Tag, RefreshCw, Store, Palette,
-  LogOut, ChevronRight, ShoppingBag
+  LogOut, ChevronRight, ShoppingBag, Settings
 } from 'lucide-react';
 
 const navItems = [
@@ -13,6 +13,7 @@ const navItems = [
   { label: 'SYNCHRONIZATION', type: 'section' },
   { label: 'Kledo Sync', to: '/sync', icon: RefreshCw },
   { label: 'CONFIGURATION', type: 'section' },
+  { label: 'Settings', to: '/settings', icon: Settings },
   { label: 'Store & Whatsapp', to: '/config/store', icon: Store },
   { label: 'Branding', to: '/config/branding', icon: Palette },
 ];

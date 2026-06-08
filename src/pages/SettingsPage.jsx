@@ -1,6 +1,3 @@
-#!/bin/bash
-
-cat > /opt/adil-dashboard/src/pages/SettingsPage.jsx << 'JSEOF'
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import PageHeader from '@/components/layout/PageHeader';
@@ -244,6 +241,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-JSEOF
-
-echo "✅ SettingsPage.jsx selesai"
