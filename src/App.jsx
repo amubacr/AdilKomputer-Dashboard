@@ -4,6 +4,10 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import LoginPage from '@/pages/LoginPage';
 import DashboardPage from '@/pages/DashboardPage';
 import SyncPage from '@/pages/SyncPage';
+import ProductsPage from '@/pages/ProductsPage';
+import CategoriesPage from '@/pages/CategoriesPage';
+import StoreConfigPage from '@/pages/StoreConfigPage';
+import BrandingPage from '@/pages/BrandingPage';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -17,11 +21,11 @@ function AppRoutes() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-      <Route path="/products" element={<ProtectedRoute><div className="p-6 text-gray-500">Products — coming soon</div></ProtectedRoute>} />
-      <Route path="/categories" element={<ProtectedRoute><div className="p-6 text-gray-500">Categories — coming soon</div></ProtectedRoute>} />
+      <Route path="/products" element={<ProtectedRoute><ProductsPage /></ProtectedRoute>} />
+      <Route path="/categories" element={<ProtectedRoute><CategoriesPage /></ProtectedRoute>} />
       <Route path="/sync" element={<ProtectedRoute><SyncPage /></ProtectedRoute>} />
-      <Route path="/config/store" element={<ProtectedRoute><div className="p-6 text-gray-500">Store Config — coming soon</div></ProtectedRoute>} />
-      <Route path="/config/branding" element={<ProtectedRoute><div className="p-6 text-gray-500">Branding — coming soon</div></ProtectedRoute>} />
+      <Route path="/config/store" element={<ProtectedRoute><StoreConfigPage /></ProtectedRoute>} />
+      <Route path="/config/branding" element={<ProtectedRoute><BrandingPage /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );
