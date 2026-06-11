@@ -13,7 +13,7 @@ const Field = ({ label, name, value, onChange, type = 'text', placeholder = '', 
         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${value === 'true' ? 'bg-red-700' : 'bg-gray-200'}`}>
         <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${value === 'true' ? 'translate-x-6' : 'translate-x-1'}`} />
       </button>
-    ) : type === 'select' ? null : (
+    ) : (
       <input
         type={type} name={name} value={value} onChange={onChange} placeholder={placeholder}
         className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-red-200"
@@ -30,16 +30,46 @@ const Section = ({ title, children }) => (
   </div>
 );
 
-const ImagePreview = ({ url, label }) => (
-  url ? (
-    <div className="mt-2 p-3 bg-gray-50 rounded-lg flex items-center gap-3">
-      <img src={url} alt={label} className="h-10 object-contain" onError={e => e.target.style.display='none'} />
-      <a href={url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline flex items-center gap-1">
-        <Eye className="w-3 h-3" /> Preview
-      </a>
+const LogoField = ({ label, urlKey, sizeKey, config, onChange, hint = '' }) => {
+  const url = config[urlKey] || '';
+  const size = parseInt(config[sizeKey]) || 48;
+
+  return (
+    <div className="space-y-2">
+      <label className="block text-xs font-medium text-gray-600">{label}</label>
+      <input
+        type="text" name={urlKey} value={url} onChange={onChange}
+        placeholder="https://..."
+        className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-red-200"
+      />
+      {hint && <p className="text-xs text-gray-400">{hint}</p>}
+
+      {/* Size slider */}
+      <div className="flex items-center gap-3 bg-gray-50 rounded-lg p-3">
+        <div className="flex-1">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs text-gray-500">Ukuran</span>
+            <span className="text-xs font-medium text-gray-700">{size}px</span>
+          </div>
+          <input type="range" name={sizeKey} min="24" max="120" step="4"
+            value={size} onChange={onChange}
+            className="w-full accent-red-700" />
+          <div className="flex justify-between text-xs text-gray-400 mt-0.5">
+            <span>24px</span><span>120px</span>
+          </div>
+        </div>
+        {/* Preview */}
+        {url && (
+          <div className="flex-shrink-0 bg-white border border-gray-200 rounded-lg p-2 flex items-center justify-center" style={{ minWidth: '80px', minHeight: '60px' }}>
+            <img src={url} alt="Preview" style={{ height: `${size}px`, maxWidth: '120px' }}
+              className="object-contain"
+              onError={e => e.target.style.display = 'none'} />
+          </div>
+        )}
+      </div>
     </div>
-  ) : null
-);
+  );
+};
 
 export default function BrandingPage() {
   const [config, setConfig] = useState({});
@@ -59,8 +89,13 @@ export default function BrandingPage() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const keys = ['brand_logo_main', 'brand_logo_footer', 'brand_favicon', 'brand_tagline',
-        'brand_watermark_enabled', 'brand_watermark_url', 'brand_watermark_position', 'brand_watermark_opacity'];
+      const keys = [
+        'brand_logo_main', 'brand_logo_main_size',
+        'brand_logo_footer', 'brand_logo_footer_size',
+        'brand_favicon', 'brand_tagline',
+        'brand_watermark_enabled', 'brand_watermark_url', 'brand_watermark_size',
+        'brand_watermark_position', 'brand_watermark_opacity'
+      ];
       const payload = {};
       keys.forEach(k => { if (config[k] !== undefined) payload[k] = config[k]; });
       await axios.put(`${API}/api/config`, payload);
@@ -95,20 +130,27 @@ export default function BrandingPage() {
         <Section title="Logo & Identitas">
           <Field label="Tagline" name="brand_tagline" value={config.brand_tagline || ''} onChange={handleChange}
             placeholder="Urusan PC, Beresnya di Wak Adi" />
-          <div>
-            <Field label="Logo Utama (URL)" name="brand_logo_main" value={config.brand_logo_main || ''} onChange={handleChange}
-              placeholder="https://..." hint="Logo yang muncul di navbar katalog" />
-            <ImagePreview url={config.brand_logo_main} label="Logo Utama" />
-          </div>
-          <div>
-            <Field label="Logo Footer (URL)" name="brand_logo_footer" value={config.brand_logo_footer || ''} onChange={handleChange}
-              placeholder="https://..." hint="Logo yang muncul di footer, kosongkan untuk pakai logo utama" />
-            <ImagePreview url={config.brand_logo_footer} label="Logo Footer" />
-          </div>
+
+          <LogoField label="Logo Utama (Navbar)" urlKey="brand_logo_main" sizeKey="brand_logo_main_size"
+            config={config} onChange={handleChange}
+            hint="Logo yang muncul di navbar katalog" />
+
+          <LogoField label="Logo Footer" urlKey="brand_logo_footer" sizeKey="brand_logo_footer_size"
+            config={config} onChange={handleChange}
+            hint="Kosongkan untuk pakai logo utama" />
+
           <div>
             <Field label="Favicon (URL)" name="brand_favicon" value={config.brand_favicon || ''} onChange={handleChange}
-              placeholder="https://..." hint="Ikon yang muncul di tab browser (format .svg atau .ico)" />
-            <ImagePreview url={config.brand_favicon} label="Favicon" />
+              placeholder="https://..." hint="Ikon tab browser (.svg atau .ico)" />
+            {config.brand_favicon && (
+              <div className="mt-2 flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+                <img src={config.brand_favicon} alt="Favicon" className="w-6 h-6 object-contain" />
+                <a href={config.brand_favicon} target="_blank" rel="noopener noreferrer"
+                  className="text-xs text-blue-600 hover:underline flex items-center gap-1">
+                  <Eye className="w-3 h-3" /> Preview
+                </a>
+              </div>
+            )}
           </div>
         </Section>
 
@@ -123,11 +165,9 @@ export default function BrandingPage() {
 
           {config.brand_watermark_enabled === 'true' && (
             <>
-              <div>
-                <Field label="URL Gambar Watermark" name="brand_watermark_url" value={config.brand_watermark_url || ''} onChange={handleChange}
-                  placeholder="https://..." hint="URL gambar PNG transparan (rekomendasi: Wak Adi logo)" />
-                <ImagePreview url={config.brand_watermark_url} label="Watermark" />
-              </div>
+              <LogoField label="Gambar Watermark" urlKey="brand_watermark_url" sizeKey="brand_watermark_size"
+                config={config} onChange={handleChange}
+                hint="URL gambar PNG transparan (rekomendasi: Wak Adi logo)" />
 
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1.5">Posisi Watermark</label>
@@ -154,7 +194,6 @@ export default function BrandingPage() {
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                 <p className="text-xs text-blue-700">
                   💡 Watermark diterapkan sebagai overlay CSS di katalog — tidak mengubah file gambar asli dari Kledo.
-                  Untuk watermark permanen pada file gambar, gunakan fitur export di roadmap berikutnya.
                 </p>
               </div>
             </>
